@@ -6,9 +6,11 @@ const OpenAI = require('openai');
 const memory = require('../memory');
 
 const app = express();
+const PUBLIC = path.resolve(__dirname, '..', 'public');
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(PUBLIC));
 
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
@@ -134,6 +136,10 @@ app.post('/api/memory/clear', (_req, res) => {
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', model: MODEL });
+});
+
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(PUBLIC, 'index.html'));
 });
 
 module.exports = app;
