@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARIA - AI Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js">
+  </script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #07070d;
+      --bg-secondary: #0c0c1a;
+      --bg-tertiary: #14142a;
+      --bg-elevated: #1c1c3a;
+      --bg-user: #7c3aed;
+      --bg-user-hover: #6d28d9;
+      --bg-ai: #181830;
+      --text-primary: #ececf0;
+      --text-secondary: #9898b8;
+      --text-muted: #5c5c78;
+      --accent: #7c3aed;
+      --accent-glow: rgba(124, 58, 237, 0.25);
+      --accent-secondary: #00d4ff;
+      --border: #222244;
+      --border-light: #2a2a4a;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #22c55e;
+      --sidebar-width: 280px;
+      --header-height: 60px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.15);
+    }
+
+    html {
+      font-size: 15px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    .app-layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ---- Sidebar ---- */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .sidebar-section {
+      padding: 16px 20px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .user-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    .user-status-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .memory-section {
+      padding: 16px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .memory-section h3 {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .memory-panel {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+
+    .memory-block {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .memory-block-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-secondary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .memory-block-title i {
+      font-size: 0.65rem;
+    }
+
+    .memory-item {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      padding: 3px 0;
+      padding-left: 14px;
+      position: relative;
+      line-height: 1.4;
+    }
+
+    .memory-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 9px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .memory-empty {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 20px 0;
+      font-style: italic;
+    }
+
+    .clear-memory-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .clear-memory-btn:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.06);
+    }
+
+    /* ---- Main Area ---- */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--bg-primary);
+    }
+
+    /* ---- Header ---- */
+    .chat-header {
+      height: var(--header-height);
+      min-height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .assistant-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .assistant-info h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      transition: all 0.3s ease;
+    }
+
+    .status-dot.thinking {
+      background: var(--accent);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+      }
+    }
+
+    .sidebar-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .header-btn:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--border-light);
+      color: var(--text-primary);
+    }
+
+    /* ---- Chat Messages ---- */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .chat-messages-inner {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .message {
+      display: flex;
+      margin-bottom: 12px;
+      animation: fadeInUp 0.3s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.ai {
+      justify-content: flex-start;
+    }
+
+    .message-bubble {
+      max-width: 78%;
+      padding: 10px 16px;
+      border-radius: var(--radius-lg);
+      position: relative;
+      line-height: 1.55;
+    }
+
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, var(--bg-user), #6d28d9);
+      border-bottom-right-radius: 4px;
+      color: #fff;
+    }
+
+    .message.ai .message-bubble {
+      background: var(--bg-ai);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text-primary);
+    }
+
+    .message-bubble p {
+      margin-bottom: 6px;
+    }
+
+    .message-bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .message-bubble ul,
+    .message-bubble ol {
+      margin: 6px 0;
+      padding-left: 20px;
+    }
+
+    .message-bubble li {
+      margin-bottom: 2px;
+    }
+
+    .message-bubble code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+    }
+
+    .message-bubble pre {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    .message-bubble pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.8rem;
+    }
+
+    .message-bubble a {
+      color: var(--accent-secondary);
+      text-decoration: none;
+    }
+
+    .message-bubble a:hover {
+      text-decoration: underline;
+    }
+
+    .message-bubble strong {
+      font-weight: 600;
+    }
+
+    .message-bubble blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+      margin: 8px 0;
+      color: var(--text-secondary);
+    }
+
+    .timestamp {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    .message.user .timestamp {
+      text-align: right;
+    }
+
+    /* ---- Typing Indicator ---- */
+    .typing-indicator {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 12px;
+      animation: fadeInUp 0.2s ease;
+    }
+
+    .typing-bubble {
+      background: var(--bg-ai);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      border-bottom-left-radius: 4px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .typing-bubble span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: typingBounce 1.4s ease-in-out infinite;
+    }
+
+    .typing-bubble span:nth-child(1) {
+      animation-delay: 0s;
+    }
+    .typing-bubble span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-bubble span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typingBounce {
+      0%,
+      80%,
+      100% {
+        transform: scale(1);
+        opacity: 0.4;
+      }
+      40% {
+        transform: scale(1.3);
+        opacity: 1;
+      }
+    }
+
+    /* ---- Welcome Message ---- */
+    .welcome-container {
+      text-align: center;
+      padding: 40px 20px;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    .welcome-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .welcome-sub {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      max-width: 400px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .welcome-dots {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .welcome-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .welcome-dot i {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    /* ---- Input Area ---- */
+    .input-area {
+      padding: 12px 24px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .input-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 8px 8px 8px 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-wrapper textarea {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      resize: none;
+      min-height: 22px;
+      max-height: 120px;
+      line-height: 1.5;
+      padding: 6px 0;
+    }
+
+    .input-wrapper textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .char-count {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      padding: 0 4px;
+      min-width: 32px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .char-count.warning {
+      color: var(--danger);
+    }
+
+    .input-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .voice-btn {
+      background: transparent;
+      color: var(--text-muted);
+    }
+
+    .voice-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+
+    .voice-btn.recording {
+      color: var(--danger);
+      animation: micPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes micPulse {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.15);
+      }
+    }
+
+    .send-btn {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .send-btn:hover {
+      background: var(--bg-user-hover);
+      box-shadow: 0 0 20px var(--accent-glow);
+      transform: scale(1.05);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ---- Modal ---- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 400px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+      animation: scaleIn 0.2s ease;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-field {
+      margin-bottom: 16px;
+    }
+
+    .modal-field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .modal-field input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .modal-field input:focus {
+      border-color: var(--accent);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .modal-btn {
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .modal-btn.primary:hover {
+      background: var(--bg-user-hover);
+    }
+
+    .modal-btn.secondary {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .modal-btn.secondary:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-lg);
+      z-index: 1100;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      :root {
+        --sidebar-width: 260px;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        z-index: 200;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-toggle {
+        display: flex;
+      }
+
+      .chat-messages {
+        padding: 16px 16px 12px;
+      }
+
+      .input-area {
+        padding: 8px 16px 16px;
+      }
+
+      .message-bubble {
+        max-width: 90%;
+      }
+
+      .chat-header {
+        padding: 0 16px;
+      }
+    }
+
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 199;
+    }
+
+    .sidebar-backdrop.show {
+      display: block;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .error-message {
+      color: var(--danger);
+      font-size: 0.82rem;
+      text-align: center;
+      padding: 8px 16px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">ARIA</div>
+        <div class="logo-sub">Advanced Reasoning Intelligence</div>
+      </div>
+
+      <div class="user-profile">
+        <div class="avatar" id="user-avatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">User</div>
+          <div class="user-status-text">
+            <span class="user-status-dot"></span>
+            Ready
+          </div>
+        </div>
+      </div>
+
+      <div class="memory-section">
+        <h3><i class="fas fa-brain"></i> Memory</h3>
+        <div class="memory-panel" id="memory-panel">
+          <div class="memory-empty">No memories yet.<br />Start a conversation!</div>
+        </div>
+        <button class="clear-memory-btn" id="clear-memory-btn">
+          <i class="fas fa-trash-alt"></i>
+          Clear Memory
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-area">
+      <!-- Header -->
+      <header class="chat-header">
+        <div class="assistant-info">
+          <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1>ARIA</h1>
+          <span class="status" id="status-indicator">
+            <span class="status-dot online" id="status-dot"></span>
+            <span id="status-text">Online</span>
+          </span>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" id="settings-btn" aria-label="Settings">
+            <i class="fas fa-cog"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat -->
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-messages-inner" id="messages-inner">
+          <div class="welcome-container" id="welcome-message">
+            <div class="welcome-icon"><i class="fas fa-sparkles"></i></div>
+            <div class="welcome-title">Welcome to ARIA</div>
+            <div class="welcome-sub">
+              Your intelligent assistant with memory. Ask me anything — I'll remember our conversations.
+            </div>
+            <div class="welcome-dots">
+              <div class="welcome-dot"><i class="fas fa-comment-dots"></i> Chat</div>
+              <div class="welcome-dot"><i class="fas fa-microphone"></i> Voice</div>
+              <div class="welcome-dot"><i class="fas fa-brain"></i> Remembers</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea
+          id="user-input"
+          placeholder="Message ARIA..."
+          rows="1"
+          maxlength="2000"
+          aria-label="Message input"
+        ></textarea>
+        <div class="input-actions">
+          <span class="char-count" id="char-count">0</span>
+          <button class="input-btn voice-btn" id="voice-btn" aria-label="Voice input">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button class="input-btn send-btn" id="send-btn" aria-label="Send message">
+            <i class="fas fa-arrow-up"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h2><i class="fas fa-cog"></i> Settings</h2>
+    <div class="modal-field">
+      <label for="settings-name">Your Name</label>
+      <input type="text" id="settings-name" placeholder="Enter your name" maxlength="30" />
+    </div>
+    <div class="modal-field">
+      <label>Model</label>
+      <input type="text" id="settings-model" readonly style="opacity:0.6" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="settings-cancel">Cancel</button>
+      <button class="modal-btn primary" id="settings-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  (function() {
+    'use strict';
+
+    const API_BASE = '';
+    const MAX_CHARS = 2000;
+
+    const state = {
+      messages: [],
+      memory: { userPreferences: {}, pastTopics: [], importantFacts: [] },
+      userName: localStorage.getItem('aria_userName') || 'User',
+      isRecording: false,
+      isProcessing: false,
+      recognition: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const chatMessages = $('chat-messages');
+    const messagesInner = $('messages-inner');
+    const userInput = $('user-input');
+    const sendBtn = $('send-btn');
+    const voiceBtn = $('voice-btn');
+    const charCount = $('char-count');
+    const statusDot = $('status-dot');
+    const statusText = $('status-text');
+    const memoryPanel = $('memory-panel');
+    const clearMemoryBtn = $('clear-memory-btn');
+    const userNameEl = $('user-name');
+    const userAvatar = $('user-avatar');
+    const sidebar = $('sidebar');
+    const sidebarToggle = $('sidebar-toggle');
+    const sidebarBackdrop = $('sidebar-backdrop');
+    const settingsBtn = $('settings-btn');
+    const settingsModal = $('settings-modal');
+    const settingsName = $('settings-name');
+    const settingsModel = $('settings-model');
+    const settingsCancel = $('settings-cancel');
+    const settingsSave = $('settings-save');
+    const welcomeMessage = $('welcome-message');
+    const toast = $('toast');
+    const MODEL_NAME = 'deepseek/deepseel-v4-flash:free';
+
+    function updateCharCount() {
+      const len = userInput.value.length;
+      charCount.textContent = len;
+      charCount.classList.toggle('warning', len > MAX_CHARS * 0.9);
+    }
+
+    function setStatus(mode) {
+      statusDot.className = 'status-dot';
+      if (mode === 'thinking') {
+        statusDot.classList.add('thinking');
+        statusText.textContent = 'Thinking...';
+      } else {
+        statusDot.classList.add('online');
+        statusText.textContent = 'Online';
+      }
+    }
+
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getInitials(name) {
+      return name.trim().charAt(0).toUpperCase() || 'U';
+    }
+
+    function renderUserProfile() {
+      userNameEl.textContent = state.userName;
+      userAvatar.textContent = getInitials(state.userName);
+    }
+
+    function renderMemoryPanel() {
+      const m = state.memory;
+      let html = '';
+
+      if (Object.keys(m.userPreferences || {}).length === 0 &&
+          (!m.pastTopics || m.pastTopics.length === 0) &&
+          (!m.importantFacts || m.importantFacts.length === 0)) {
+        html = '<div class="memory-empty">No memories yet.<br />Start a conversation!</div>';
+      } else {
+        if (m.userPreferences && Object.keys(m.userPreferences).length > 0) {
+          html += '<div class="memory-block">';
+          html += '<div class="memory-block-title"><i class="fas fa-sliders-h"></i> Preferences</div>';
+          for (const [key, value] of Object.entries(m.userPreferences)) {
+            html += `<div class="memory-item">${key}: ${value}</div>`;
+          }
+          html += '</div>';
+        }
+        if (m.pastTopics && m.pastTopics.length > 0) {
+          const topics = m.pastTopics.slice(-5).reverse();
+          html += '<div class="memory-block">';
+          html += '<div class="memory-block-title"><i class="fas fa-history"></i> Past Topics</div>';
+          topics.forEach(t => {
+            html += `<div class="memory-item">${t}</div>`;
+          });
+          html += '</div>';
+        }
+        if (m.importantFacts && m.importantFacts.length > 0) {
+          const facts = m.importantFacts.slice(-5).reverse();
+          html += '<div class="memory-block">';
+          html += '<div class="memory-block-title"><i class="fas fa-star"></i> Facts</div>';
+          facts.forEach(f => {
+            html += `<div class="memory-item">${f}</div>`;
+          });
+          html += '</div>';
+        }
+      }
+
+      memoryPanel.innerHTML = html;
+    }
+
+    function renderMarkdown(text) {
+      const html = marked.parse(text);
+      return DOMPurify.sanitize(html);
+    }
+
+    function appendMessage(role, content) {
+      welcomeMessage.style.display = 'none';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `message ${role}`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+
+      if (role === 'ai') {
+        bubble.innerHTML = renderMarkdown(content);
+      } else {
+        const p = document.createElement('p');
+        p.textContent = content;
+        bubble.appendChild(p);
+      }
+
+      wrapper.appendChild(bubble);
+
+      const time = document.createElement('div');
+      time.className = 'timestamp';
+      time.textContent = formatTime(new Date());
+      wrapper.appendChild(time);
+
+      messagesInner.appendChild(wrapper);
+      scrollToBottom();
+    }
+
+    function showTypingIndicator() {
+      const existing = document.querySelector('.typing-indicator');
+      if (existing) return;
+
+      const div = document.createElement('div');
+      div.className = 'typing-indicator';
+      div.innerHTML = `
+        <div class="typing-bubble">
+          <span></span><span></span><span></span>
+        </div>
+      `;
+      div.id = 'typing-indicator';
+      messagesInner.appendChild(div);
+      scrollToBottom();
+    }
+
+    function hideTypingIndicator() {
+      const el = document.querySelector('.typing-indicator');
+      if (el) el.remove();
+    }
+
+    function showError(msg) {
+      const div = document.createElement('div');
+      div.className = 'error-message';
+      div.textContent = msg;
+      messagesInner.appendChild(div);
+      scrollToBottom();
+      setTimeout(() => div.remove(), 5000);
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text || state.isProcessing) return;
+      if (text.length > MAX_CHARS) {
+        showToast('Message exceeds character limit');
+        return;
+      }
+
+      state.isProcessing = true;
+      sendBtn.disabled = true;
+      setStatus('thinking');
+
+      appendMessage('user', text);
+      userInput.value = '';
+      updateCharCount();
+      autoResizeInput();
+
+      showTypingIndicator();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            conversationHistory: state.messages,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Request failed (${res.status})`);
+        }
+
+        const data = await res.json();
+
+        hideTypingIndicator();
+        appendMessage('ai', data.reply);
+
+        state.messages.push({ role: 'user', content: text });
+        state.messages.push({ role: 'assistant', content: data.reply });
+        if (state.messages.length > 100) {
+          state.messages = state.messages.slice(-100);
+        }
+
+        if (data.memory) {
+          state.memory = data.memory;
+          renderMemoryPanel();
+        }
+      } catch (err) {
+        hideTypingIndicator();
+        showError(err.message || 'Something went wrong. Please try again.');
+      } finally {
+        state.isProcessing = false;
+        sendBtn.disabled = false;
+        setStatus('online');
+        userInput.focus();
+      }
+    }
+
+    function autoResizeInput() {
+      userInput.style.height = 'auto';
+      userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+    }
+
+    async function loadMemory() {
+      try {
+        const res = await fetch(`${API_BASE}/api/memory`);
+        if (res.ok) {
+          const data = await res.json();
+          state.memory = data.memory || state.memory;
+          renderMemoryPanel();
+        }
+      } catch (e) {
+        // silently fail, memory will start empty
+      }
+    }
+
+    async function clearMemoryAction() {
+      try {
+        const res = await fetch(`${API_BASE}/api/memory/clear`, { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          state.memory = data.memory;
+          renderMemoryPanel();
+          showToast('Memory cleared');
+        }
+      } catch (e) {
+        showToast('Failed to clear memory');
+      }
+    }
+
+    function setupVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        voiceBtn.style.display = 'none';
+        return;
+      }
+
+      state.recognition = new SpeechRecognition();
+      state.recognition.lang = 'en-US';
+      state.recognition.interimResults = false;
+      state.recognition.maxAlternatives = 1;
+
+      state.recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userInput.value += (userInput.value ? ' ' : '') + transcript;
+        updateCharCount();
+        autoResizeInput();
+        state.isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      };
+
+      state.recognition.onerror = () => {
+        state.isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        showToast('Voice input unavailable');
+      };
+
+      state.recognition.onend = () => {
+        state.isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      };
+    }
+
+    function toggleVoiceInput() {
+      if (!state.recognition) return;
+
+      if (state.isRecording) {
+        state.recognition.stop();
+        state.isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        return;
+      }
+
+      try {
+        state.recognition.start();
+        state.isRecording = true;
+        voiceBtn.classList.add('recording');
+        voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+      } catch (e) {
+        showToast('Voice input unavailable');
+      }
+    }
+
+    function openSettings() {
+      settingsName.value = state.userName;
+      settingsModel.value = MODEL_NAME;
+      settingsModal.classList.add('open');
+      setTimeout(() => settingsName.focus(), 100);
+    }
+
+    function closeSettings() {
+      settingsModal.classList.remove('open');
+    }
+
+    function saveSettings() {
+      const name = settingsName.value.trim() || 'User';
+      state.userName = name;
+      localStorage.setItem('aria_userName', name);
+      renderUserProfile();
+      closeSettings();
+      showToast('Settings saved');
+    }
+
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+      sidebarBackdrop.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('show');
+    }
+
+    // ---- Event Listeners ----
+    sendBtn.addEventListener('click', sendMessage);
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    userInput.addEventListener('input', () => {
+      updateCharCount();
+      autoResizeInput();
+    });
+
+    voiceBtn.addEventListener('click', toggleVoiceInput);
+    clearMemoryBtn.addEventListener('click', clearMemoryAction);
+    sidebarToggle.addEventListener('click', toggleSidebar);
+    sidebarBackdrop.addEventListener('click', closeSidebar);
+    settingsBtn.addEventListener('click', openSettings);
+    settingsCancel.addEventListener('click', closeSettings);
+    settingsSave.addEventListener('click', saveSettings);
+
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) closeSettings();
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (settingsModal.classList.contains('open')) closeSettings();
+        if (sidebar.classList.contains('open')) closeSidebar();
+      }
+    });
+
+    // ---- Init ----
+    renderUserProfile();
+    loadMemory();
+    setupVoiceInput();
+    updateCharCount();
+    userInput.focus();
+  })();
+</script>
+</body>
+</html>
